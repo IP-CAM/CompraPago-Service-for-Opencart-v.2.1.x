@@ -1,10 +1,6 @@
 <?php
 require_once dirname(dirname(dirname(dirname(__FILE__)))) . '/vendor/autoload.php';
-//require_once __DIR__."/../../../vendor/autoload.php";
 
-use Compropago\Sdk\Utils\Store;
-use Compropago\Sdk\Client;
-use Compropago\Sdk\Service;
 
 class ControllerPaymentCompropago extends Controller
 {
@@ -282,15 +278,44 @@ class ControllerPaymentCompropago extends Controller
 
 
     /**
-     * Obtener querys con el prefijo de la aplicacion e insertar tablas de compropago
+     * 
      */
     public function install()
     {
-        $querys = Store::sqlCreateTables(DB_PREFIX);
+        $this->db->query("CREATE TABLE IF NOT EXISTS `" . DB_PREFIX . "compropago_orders` ("
+            . "`id` int(11) NOT NULL AUTO_INCREMENT,"
+            . "`date` int(11) NOT NULL,"
+            . "`modified` int(11) NOT NULL,"
+            . "`compropagoId` varchar(50) NOT NULL,"
+            . "`compropagoStatus` varchar(50) NOT NULL,"
+            . "`storeCartId` varchar(255) NOT NULL,"
+            . "`storeOrderId` varchar(255) NOT NULL,"
+            . "`storeExtra` varchar(255) NOT NULL,"
+            . "`ioIn` mediumtext,"
+            . "`ioOut` mediumtext,"
+            . "PRIMARY KEY (`id`), UNIQUE KEY (`compropagoId`)"
+            . ")ENGINE=MyISAM DEFAULT CHARSET=utf8  DEFAULT COLLATE utf8_general_ci AUTO_INCREMENT=1;");
 
-        foreach($querys as $query){
-            $this->db->query($query);
-        }
+        $this->db->query("CREATE TABLE IF NOT EXISTS `" . DB_PREFIX . "compropago_transactions` ("
+            . "`id` int(11) AUTO_INCREMENT,"
+            . "`order_id` int(11) NOT NULL,"
+            . "`date` int(11) NOT NULL,"
+            . "`compropagoId` varchar(50) NOT NULL,"
+            . "`compropagoStatus` varchar(50) NOT NULL,"
+            . "`compropagoStatusLast` varchar(50) NOT NULL,"
+            . "`ioIn` mediumtext,"
+            . "`ioOut` mediumtext,"
+            . "PRIMARY KEY (`id`)"
+            . ")ENGINE=MyISAM DEFAULT CHARSET=utf8  DEFAULT COLLATE utf8_general_ci  AUTO_INCREMENT=1;");
+
+        $this->db->query("CREATE TABLE IF NOT EXISTS `" . DB_PREFIX . "compropago_webhook_transactions` ("
+            . "`id` integer NOT NULL AUTO_INCREMENT,"
+            . "`webhookId` varchar(50) NOT NULL,"
+            . "`webhookUrl` varchar(300) NOT NULL,"
+            . "`updated` integer NOT NULL,"
+            . "`status` varchar(50) NOT NULL,"
+            . "PRIMARY KEY (`id`)"
+            . ")ENGINE=MyISAM DEFAULT CHARSET=utf8  DEFAULT COLLATE utf8_general_ci  AUTO_INCREMENT=1;");
     }
 
     /**
@@ -298,10 +323,6 @@ class ControllerPaymentCompropago extends Controller
      */
     public function uninstall()
     {
-        $querys = Store::sqlDropTables(DB_PREFIX);
-
-        foreach($querys as $query){
-            $this->db->query($query);
-        }
+        
     }
 }
