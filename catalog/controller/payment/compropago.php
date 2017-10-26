@@ -1,9 +1,9 @@
 <?php
 require_once dirname(dirname(dirname(dirname(__FILE__)))) . '/vendor/autoload.php';
 
-use Compropago\Sdk\Client;
-use Compropago\Sdk\Service;
-use Compropago\Sdk\Utils\Store;
+ use CompropagoSdk\Factory\Factory;
+ use CompropagoSdk\Client;
+ use CompropagoSdk\Tools\Validations;
 
 class ControllerPaymentCompropago extends Controller
 {
@@ -43,13 +43,16 @@ class ControllerPaymentCompropago extends Controller
     private function initServices()
     {
         $this->compropagoConfig = array(
-            'publickey' => $this->config->get('compropago_public_key'),
-            'privatekey' => $this->config->get('compropago_secret_key'),
-            'live' => $this->config->get('compropago_mode')
+            'publickey'     => $this->config->get('compropago_public_key'),
+            'privatekey'    => $this->config->get('compropago_secret_key'),
+            'live'          => $this->config->get('compropago_mode')
         );
 
-        $this->compropagoClient = new Client($this->compropagoConfig);
-        $this->compropagoService = new Service($this->compropagoClient);
+        $this->compropagoClient = new Client(
+            $this->compropagoConfig['publickey'],
+            $this->compropagoConfig['privatekey'],
+            $this->compropagoConfig['live']
+        );
     }
 
 
@@ -62,48 +65,38 @@ class ControllerPaymentCompropago extends Controller
         $this->language->load('payment/compropago');
         $this->load->model('setting/setting');
 
-        $data['text_title'] = $this->language->get('text_title');
+        $data['text_title']         = $this->language->get('text_title');
         $data['entry_payment_type'] = $this->language->get('entry_payment_type');
-        $data['button_confirm'] = $this->language->get('button_confirm');
+        $data['button_confirm']     = $this->language->get('button_confirm');
 
         $data['comprodata'] = array(
-            'providers' => $this->compropagoService->getProviders(),
-            'showlogo' => $this->config->get('compropago_showlogo'),
-            'description' => $this->config->get('compropago_description'),
+            'providers'     => $this->compropagoClient->api->listProviders(),
+            'showlogo'      => $this->config->get('compropago_showlogo'),
+            'description'   => $this->config->get('compropago_description'),
             'instrucciones' => $this->config->get('compropago_instrucciones')
         );
-
 
         $this->load->model('checkout/order');
         $order_info = $this->model_checkout_order->getOrder($this->session->data['order_id']);
 
         if ($order_info) {
-            /*if (file_exists(DIR_TEMPLATE . $this->config->get('config_template') . '/template/payment/compropago.tpl')) {
-                return $this->load->view($this->config->get('config_template') . '/template/payment/compropago.tpl', $data);
-            } else {
-                return $this->load->view('payment/compropago', $data);
-            }*/
-
-            return $this->load->view('payment/compropago', $data);
+            return $this->load->view($this->config->get('config_template') . '/template/payment/compropago.tpl', $data);
         }
     }
 
 
     /**
-     * Prosesamiento de la orden de compra
+     * Procesamiento de la orden de compra
      */
     public function send()
     {
         $this->load->model('checkout/order');
         $this->load->model('setting/setting');
 
-        $order_id = $this->session->data['order_id'];
-
-        $order_info = $this->model_checkout_order->getOrder($order_id);
-
-        $products = $this->cart->getProducts();
-
-        $order_name = '';
+        $order_id       = $this->session->data['order_id'];
+        $order_info     = $this->model_checkout_order->getOrder($order_id);
+        $products       = $this->cart->getProducts();
+        $order_name     = '';
 
         foreach ($products as $product) {
             $order_name .= $product['name'];
@@ -300,7 +293,6 @@ class ControllerPaymentCompropago extends Controller
                 $jsonObj->id=$jsonObj->data->object->id;
                 $jsonObj->short_id=$jsonObj->data->object->short_id;
             }
-
 
             //webhook Test?
             if($jsonObj->id=="ch_00000-000-0000-000000" || $jsonObj->short_id =="000000"){
