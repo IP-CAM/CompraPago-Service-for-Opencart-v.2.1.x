@@ -1,6 +1,9 @@
 <?php
 require_once dirname(dirname(dirname(dirname(__FILE__)))) . '/vendor/autoload.php';
 
+use CompropagoSdk\Factory\Factory;
+use CompropagoSdk\Client;
+use CompropagoSdk\Tools\Validations;
 
 class ControllerPaymentCompropago extends Controller
 {
@@ -201,15 +204,19 @@ class ControllerPaymentCompropago extends Controller
                 }
 
                 $compropagoConfig = array(
-                    "publickey" => $this->config->get('compropago_public_key'),
-                    "privatekey" => $this->config->get('compropago_secret_key'),
-                    "live" => $moduleLive
+                    "publickey"     => $this->config->get('compropago_public_key'),
+                    "privatekey"    => $this->config->get('compropago_secret_key'),
+                    "live"          => $moduleLive
                 );
 
                 try{
-                    $compropagoClient = new Client($compropagoConfig);
-                    $compropagoService = new Service($compropagoClient);
+                    $compropagoClient = new Client(
+                        $this->compropagoConfig->publickey,
+                        $this->compropagoConfig->privatekey,
+                        $this->compropagoConfig->live
+                    );
                     //eval keys
+                    /*
                     if(!$compropagoResponse = $compropagoService->evalAuth()){
                         $this->error[] = 'Invalid Keys, The Public Key and Private Key must be valid before using this module.';
                         $flagerror = true;
@@ -239,7 +246,16 @@ class ControllerPaymentCompropago extends Controller
                                 }
                             }
                         }
+                    }*/
+
+                    if(validateGateway($compropagoClient)){
+                        $this->error[] = 'Invalid Keys, The Public Key and Private Key must be valid before using this module.';
+                        $flagerror = true;
+                    }else{
+                        $this->error[] = 'Correct keys. Do not worry.';
+                        $flagerror = true;
                     }
+
                 }catch (\Exception $e) {
                     //something went wrong on the SDK side
                     $this->error[] = $e->getMessage(); //may not be show or translated
