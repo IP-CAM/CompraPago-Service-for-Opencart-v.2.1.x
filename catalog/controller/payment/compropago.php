@@ -113,8 +113,19 @@ class ControllerPaymentCompropago extends Controller
             'app_client_version' => VERSION
         );
 
+        $order = CompropagoSdk\Factory\Factory::getInstanceOf('PlaceOrderInfo', $order_info);
+        
+        try {
+            $response = $this->compropagoClient->api->placeOrder($order);
+        } catch (Exception $e) {
+            die('This payment method is not available.' . $e->getMessage());
+        }
 
-        $response = $this->compropagoService->placeOrder($data);
+        if($response->type != 'charge.pending'){
+            die('This payment method is not available::' . $response->type);
+        }else{
+            die('This payment method is ok::' . $response->type);
+        }
 
 
         /**
