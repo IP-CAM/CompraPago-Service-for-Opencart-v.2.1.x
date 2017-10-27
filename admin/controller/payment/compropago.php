@@ -211,9 +211,9 @@ class ControllerPaymentCompropago extends Controller
 
                 try{
                     $compropagoClient = new Client(
-                        $this->compropagoConfig->publickey,
-                        $this->compropagoConfig->privatekey,
-                        $this->compropagoConfig->live
+                        $this->compropagoConfig['publickey'],
+                        $this->compropagoConfig['privatekey'],
+                        $this->compropagoConfig['live']
                     );
                     //eval keys
                     /*
@@ -248,7 +248,7 @@ class ControllerPaymentCompropago extends Controller
                         }
                     }*/
 
-                    if(validateGateway($compropagoClient)){
+                    if(Validations::validateGateway($compropagoClient)){
                         $this->error[] = 'Invalid Keys, The Public Key and Private Key must be valid before using this module.';
                         $flagerror = true;
                     }else{
