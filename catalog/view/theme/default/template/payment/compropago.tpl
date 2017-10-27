@@ -1,5 +1,4 @@
-
-<link rel="stylesheet" href="vendor/assets/cpstyle.css">
+<link rel="stylesheet" href="catalog/view/theme/default/stylesheet/compropago/cp-style.css">
 
 <form class="form-horizontal">
     <fieldset id="payment">
@@ -14,40 +13,43 @@
             <div class="cprow">
                 <div class="cpcolumn">
                     <?php echo $comprodata['instrucciones']; ?> <br>
-                    <hr>
                 </div>
             </div>
 
-            <?php if($comprodata['showlogo'] == 'yes') { ?>
+            <div class="cprow">
+                <div class="cpcolumn">
+                    <?php if($comprodata['showlogo'] == 'yes') { ?>
 
+                        <ul class="providers_list">
+                            <?php foreach ($comprodata['providers'] as $provider){ ?>
+                                <li>
+                                    <input type="radio" id="cp_<?php echo $provider->internal_name; ?>" name="compropagoProvider" value="<?php echo $provider->internal_name; ?>">
+                                    <label class="cp-provider" for="cp_<?php echo $provider->internal_name; ?>">
+                                        <img src="<?php echo $provider->image_medium; ?>" alt="<?php echo $provider->internal_name; ?>">
+                                    </label>
+                                </li>
+                            <?php } ?>
+                        </ul>
 
-                <ul>
-                    <?php foreach ($comprodata['providers'] as $provider){ ?>
-                        <li>
-                            <input type="radio" id="compropago_<?php echo $provider->internal_name; ?>" name="compropagoProvider" value="<?php echo $provider->internal_name; ?>">
-                            <label for="compropago_<?php echo $provider->internal_name; ?>">
-                                <img src="<?php echo $provider->image_medium; ?>" alt="compropago_<?php echo $provider->internal_name; ?>">
-                            </label>
-                        </li>
+                    <?php } else { ?>
+
+                        <div id="cppayment_store">
+                            <select name="compropagoProvider" class="providers_list" title="Proveedores">
+                                <?php foreach ($comprodata['providers'] as $provider){ ?>
+                                    <option value="<?php echo $provider->internal_name; ?>"> <?php echo $provider->name; ?> </option>
+                                <?php } ?>
+                            </select>
+                        </div>
+
                     <?php } ?>
-                </ul>
+                </div>
+            </div>
 
-
-            <?php } else { ?>
-
-
-                <select name="compropagoProvider" title="Proveedores">
-                    <?php foreach ($comprodata['providers'] as $provider){ ?>
-                        <option value="<?php echo $provider->internal_name; ?>"> <?php echo $provider->name; ?> </option>
-                    <?php } ?>
-                </select>
-
-
-            <?php } ?>
         </section>
 
 
         <script>
+            
             var providers = document.querySelectorAll(
                     ".cpcontainer.cpprovider-select ul li label img"
             );
@@ -55,17 +57,20 @@
             for (x = 0; x < providers.length; x++){
                 providers[x].addEventListener('click', function(){
                     cleanCpRadio();
-                    id = this.getAttribute("alt");
-                    document.querySelector("#"+id).checked = true;
+                    console.log($(this).attr('alt'));
+                    //id = this.getAttribute("alt");
+                    //document.querySelector("#"+id).checked = true;
                 });
             }
 
             function cleanCpRadio(){
                 for(y = 0; y < providers.length; y++){
-                    id = providers[y].parentNode.getAttribute('for');
-                    document.querySelector("#"+id).checked = false;
+                    console.log( providers[y].parentNode );
+                    //id = providers[y].parentNode.getAttribute('for');
+                    //document.querySelector("#"+id).checked = false;
                 }
             }
+            
         </script>
         
         
@@ -79,6 +84,7 @@
 </div>
 
 <script type="text/javascript">
+    
     $('#button-confirm').bind('click', function() {
         var internal = $("input[name=compropagoProvider]:checked").val();
 
@@ -104,4 +110,5 @@
             }
         });
     });
+    
 </script>
