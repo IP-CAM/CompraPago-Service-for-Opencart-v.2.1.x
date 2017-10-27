@@ -24,7 +24,7 @@
                             <?php foreach ($comprodata['providers'] as $provider){ ?>
                                 <li>
                                     <input type="radio" id="cp_<?php echo $provider->internal_name; ?>" name="compropagoProvider" value="<?php echo $provider->internal_name; ?>">
-                                    <label class="cp-provider" for="cp_<?php echo $provider->internal_name; ?>">
+                                    <label class="cp-provider" id="cp_l_<?php echo $provider->internal_name; ?>" for="cp_<?php echo $provider->internal_name; ?>">
                                         <img src="<?php echo $provider->image_medium; ?>" alt="<?php echo $provider->internal_name; ?>">
                                     </label>
                                 </li>
@@ -56,21 +56,14 @@
 
             for (x = 0; x < providers.length; x++){
                 providers[x].addEventListener('click', function(){
-                    cleanCpRadio();
-                    console.log($(this).attr('alt'));
-                    //id = this.getAttribute("alt");
-                    //document.querySelector("#"+id).checked = true;
+                    resetOpacity();
+                    this.parentNode.style.opacity = 1;
                 });
             }
-
-            function cleanCpRadio(){
-                for(y = 0; y < providers.length; y++){
-                    console.log( providers[y].parentNode );
-                    //id = providers[y].parentNode.getAttribute('for');
-                    //document.querySelector("#"+id).checked = false;
-                }
-            }
             
+            function resetOpacity(){
+                for(x = 0; x < providers.length; x++){ providers[x].parentNode.style.opacity = 0.6; }
+            }
         </script>
         
         
