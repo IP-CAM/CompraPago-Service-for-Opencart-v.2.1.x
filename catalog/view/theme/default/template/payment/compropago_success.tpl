@@ -1,7 +1,7 @@
 <?php
-require_once __DIR__."/../../../../../../vendor/autoload.php";
+//require_once __DIR__."/../../../../../../vendor/autoload.php";
 
-use Compropago\Sdk\Controllers\Views;
+//use Compropago\Sdk\Controllers\Views;
 ?>
 
 <?php echo $header; ?>
@@ -14,13 +14,20 @@ use Compropago\Sdk\Controllers\Views;
                 $obj = json_decode(base64_decode($info_order));
                 $id = $obj->id;
             ?>
-            <?php Views::loadView('iframe', $id); ?>
+            <h2><?php echo $id; ?></h2>
+            <?php /*Views::loadView('iframe', $id);*/ ?>
         </div>
     </div>
 </div>
 
 <?php echo $footer; ?>
 
+<?php
+
+    $log = new \Log('compropago2.log');
+    $log->write('id->' . $id);
+
+?>
 
 <script language="javascript" type="text/javascript">
     function printDiv(divID) {

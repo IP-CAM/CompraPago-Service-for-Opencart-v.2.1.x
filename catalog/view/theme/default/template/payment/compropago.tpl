@@ -80,7 +80,7 @@
     
     $('#button-confirm').bind('click', function() {
         var internal = $("input[name=compropagoProvider]:checked").val();
-
+        
         $.ajax({
             url: 'index.php?route=payment/compropago/send',
             type: 'post',

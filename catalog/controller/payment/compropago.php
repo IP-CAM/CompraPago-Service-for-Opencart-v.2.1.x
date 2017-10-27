@@ -113,83 +113,89 @@ class ControllerPaymentCompropago extends Controller
             'app_client_version' => VERSION
         );
 
-        $order = CompropagoSdk\Factory\Factory::getInstanceOf('PlaceOrderInfo', $order_info);
+        $log = new \Log('compropago.log');
+        $log->write(print_r($data, true));
+
+        $order = CompropagoSdk\Factory\Factory::getInstanceOf('PlaceOrderInfo', $data);
         
         try {
-            $response = $this->compropagoClient->api->placeOrder($order);
+            $response = $this->compropagoClient->api->placeOrder($order); 
+            $log->write('placeOrder');
         } catch (Exception $e) {
+            $log->write('This payment method is not available.' . $e->getMessage());
             die('This payment method is not available.' . $e->getMessage());
+            
         }
 
         if($response->type != 'charge.pending'){
+            $log->write('This payment method is not available::' . $response->type);
             die('This payment method is not available::' . $response->type);
-        }else{
-            die('This payment method is ok::' . $response->type);
         }
 
+        try {
 
-        /**
-         * Inicia el registro de transacciones
-         */
+            /**
+              * Inicia el registro de transacciones
+            ***/
+            $recordTime = time();
+            $order_id = $order_info['order_id'];
+            $ioIn = base64_encode(serialize($response));
+            $ioOut = base64_encode(serialize($data));
 
-        $recordTime = time();
-        $order_id = $order_info['order_id'];
-        $ioIn = base64_encode(json_encode($response));
-        $ioOut = base64_encode(json_encode($data));
+            // Creacion del query para compropago_orders
+            $query = "INSERT INTO " . DB_PREFIX . "compropago_orders (`date`,`modified`,`compropagoId`,`compropagoStatus`,`storeCartId`,`storeOrderId`,`storeExtra`,`ioIn`,`ioOut`)".
+                " values (:date:,:modified:,':compropagoId:',':compropagoStatus:',':storeCartId:',':storeOrderId:',':storeExtra:',':ioIn:',':ioOut:')";
 
-        // Creacion del query para compropago_orders
-        $query = "INSERT INTO " . DB_PREFIX . "compropago_orders (`date`,`modified`,`compropagoId`,`compropagoStatus`,`storeCartId`,`storeOrderId`,`storeExtra`,`ioIn`,`ioOut`)".
-            " values (:fecha:,:modified:,':cpid:',':cpstat:',':stcid:',':stoid:',':ste:',':ioin:',':ioout:')";
+            $query = str_replace(":date:",$recordTime,$query);
+            $query = str_replace(":modified:",$recordTime,$query);
+            $query = str_replace(":compropagoId:",$response->id,$query);
+            $query = str_replace(":compropagoStatus:",$response->status,$query);
+            $query = str_replace(":storeCartId:",$order_id,$query);
+            $query = str_replace(":storeOrderId:",$order_id,$query);
+            $query = str_replace(":storeExtra:",'COMPROPAGO_PENDING',$query);
+            $query = str_replace(":ioIn:",$ioIn,$query);
+            $query = str_replace(":ioOut:",$ioOut,$query);
 
-        $query = str_replace(":fecha:",$recordTime,$query);
-        $query = str_replace(":modified:",$recordTime,$query);
-        $query = str_replace(":cpid:",$response->id,$query);
-        $query = str_replace(":cpstat:",$response->status,$query);
-        $query = str_replace(":stcid:",$order_id,$query);
-        $query = str_replace(":stoid:",$order_id,$query);
-        $query = str_replace(":ste:",'COMPROPAGO_PENDING',$query);
-        $query = str_replace(":ioin:",$ioIn,$query);
-        $query = str_replace(":ioout:",$ioOut,$query);
+            $log->write('SQL:compropago_orders::' . $query);
+            $this->db->query($query);
 
+            $compropagoOrderId = $this->db->getLastId();
 
-        $this->db->query($query);
+            $query2 = "INSERT INTO ".DB_PREFIX."compropago_transactions
+            (orderId,date,compropagoId,compropagoStatus,compropagoStatusLast,ioIn,ioOut)
+            values (:orderId:,:date:,':compropagoId:',':compropagoStatus:',':compropagoStatusLast:',':ioIn:',':ioOut:')";
 
-        $compropagoOrderId = $this->db->getLastId();
+            $query2 = str_replace(":orderId:",$compropagoOrderId,$query2);
+            $query2 = str_replace(":date:",$recordTime,$query2);
+            $query2 = str_replace(":compropagoId:",$response->id,$query2);
+            $query2 = str_replace(":compropagoStatus:",$response->status,$query2);
+            $query2 = str_replace(":compropagoStatusLast:",$response->status,$query2);
+            $query2 = str_replace(":ioIn:",$ioIn,$query2);
+            $query2 = str_replace(":ioOut:",$ioOut,$query2);
 
-        $query2 = "INSERT INTO ".DB_PREFIX."compropago_transactions
-        (orderId,date,compropagoId,compropagoStatus,compropagoStatusLast,ioIn,ioOut)
-        values (:orderid:,:fecha:,':cpid:',':cpstat:',':cpstatl:',':ioin:',':ioout:')";
+            $log->write('SQL:compropago_transactions::' . $query2);
+            $this->db->query($query2);
 
-        $query2 = str_replace(":orderid:",$compropagoOrderId,$query2);
-        $query2 = str_replace(":fecha:",$recordTime,$query2);
-        $query2 = str_replace(":cpid:",$response->id,$query2);
-        $query2 = str_replace(":cpstat:",$response->status,$query2);
-        $query2 = str_replace(":cpstatl:",$response->status,$query2);
-        $query2 = str_replace(":ioin:",$ioIn,$query2);
-        $query2 = str_replace(":ioout:",$ioOut,$query2);
+            /**
+             * Update correct status in orders
+             */
 
-        $this->db->query($query2);
+            $status_update = $this->config->get('compropago_order_status_new_id');
 
-
-        /**
-         * Update correct status in orders
-         */
-
-        $status_update = $this->config->get('compropago_order_status_new_id');
-
-        $query_update = "UPDATE ".DB_PREFIX."order SET order_status_id = $status_update WHERE order_id = $order_id";
-        $this->db->query($query_update);
-
+            $query_update = "UPDATE ".DB_PREFIX."order SET order_status_id = $status_update WHERE order_id = $order_id";
+            $log->write('SQL:'.DB_PREFIX.'order::' . $query_update);
+            $this->db->query($query_update);
+        }catch(Exception $e){
+            $log->write('This payment method is not available|error->' . $e->getMessage());
+            die('This payment method is not available|error->' . $e->getMessage());
+        }
 
         /**
          * Fin de transacciones
+         *
+         * [Envio de datos final para render de la vista de recibo]
          */
-
-
-        /**
-         * Envio de datos final para render de la vista de recibo
-         */
-
+        $log->write(print_r($response,true));
         $json['success'] = htmlspecialchars_decode($this->url->link('payment/compropago/success', 'info_order='.base64_encode(json_encode($response)) , 'SSL'));
 
         $this->response->addHeader('Content-Type: application/json');
