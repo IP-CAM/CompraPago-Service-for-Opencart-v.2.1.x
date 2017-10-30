@@ -114,7 +114,6 @@ class ControllerPaymentCompropago extends Controller
         );
 
         $log = new \Log('compropago.log');
-        $log->write(print_r($data, true));
 
         $order = CompropagoSdk\Factory\Factory::getInstanceOf('PlaceOrderInfo', $data);
         
@@ -124,7 +123,6 @@ class ControllerPaymentCompropago extends Controller
         } catch (Exception $e) {
             $log->write('This payment method is not available.' . $e->getMessage());
             die('This payment method is not available.' . $e->getMessage());
-            
         }
 
         if($response->type != 'charge.pending'){
@@ -135,45 +133,48 @@ class ControllerPaymentCompropago extends Controller
         try {
 
             /**
-              * Inicia el registro de transacciones
+             ** Inicia el registro de transacciones
             ***/
-            $recordTime = time();
-            $order_id = $order_info['order_id'];
-            $ioIn = base64_encode(serialize($response));
-            $ioOut = base64_encode(serialize($data));
+            $recordTime     = time();
+            $order_id       = $order_info['order_id'];
+            $ioIn           = base64_encode(serialize($response));
+            $ioOut          = base64_encode(serialize($data));
 
             // Creacion del query para compropago_orders
             $query = "INSERT INTO " . DB_PREFIX . "compropago_orders (`date`,`modified`,`compropagoId`,`compropagoStatus`,`storeCartId`,`storeOrderId`,`storeExtra`,`ioIn`,`ioOut`)".
                 " values (:date:,:modified:,':compropagoId:',':compropagoStatus:',':storeCartId:',':storeOrderId:',':storeExtra:',':ioIn:',':ioOut:')";
 
+
+            $status = ( isset($response->status) ) ? $response->status : '' ;
+
             $query = str_replace(":date:",$recordTime,$query);
             $query = str_replace(":modified:",$recordTime,$query);
             $query = str_replace(":compropagoId:",$response->id,$query);
-            $query = str_replace(":compropagoStatus:",$response->status,$query);
+            $query = str_replace(":compropagoStatus:",$status,$query);
             $query = str_replace(":storeCartId:",$order_id,$query);
             $query = str_replace(":storeOrderId:",$order_id,$query);
             $query = str_replace(":storeExtra:",'COMPROPAGO_PENDING',$query);
             $query = str_replace(":ioIn:",$ioIn,$query);
             $query = str_replace(":ioOut:",$ioOut,$query);
 
-            $log->write('SQL:compropago_orders::' . $query);
+            //$log->write('SQL:compropago_orders::' . $query);
             $this->db->query($query);
 
             $compropagoOrderId = $this->db->getLastId();
 
             $query2 = "INSERT INTO ".DB_PREFIX."compropago_transactions
-            (orderId,date,compropagoId,compropagoStatus,compropagoStatusLast,ioIn,ioOut)
+            (order_id,date,compropagoId,compropagoStatus,compropagoStatusLast,ioIn,ioOut)
             values (:orderId:,:date:,':compropagoId:',':compropagoStatus:',':compropagoStatusLast:',':ioIn:',':ioOut:')";
 
             $query2 = str_replace(":orderId:",$compropagoOrderId,$query2);
             $query2 = str_replace(":date:",$recordTime,$query2);
             $query2 = str_replace(":compropagoId:",$response->id,$query2);
-            $query2 = str_replace(":compropagoStatus:",$response->status,$query2);
-            $query2 = str_replace(":compropagoStatusLast:",$response->status,$query2);
+            $query2 = str_replace(":compropagoStatus:",$status,$query2);
+            $query2 = str_replace(":compropagoStatusLast:",$status,$query2);
             $query2 = str_replace(":ioIn:",$ioIn,$query2);
             $query2 = str_replace(":ioOut:",$ioOut,$query2);
 
-            $log->write('SQL:compropago_transactions::' . $query2);
+            //$log->write('SQL:compropago_transactions::' . $query2);
             $this->db->query($query2);
 
             /**
@@ -186,7 +187,6 @@ class ControllerPaymentCompropago extends Controller
             $log->write('SQL:'.DB_PREFIX.'order::' . $query_update);
             $this->db->query($query_update);
         }catch(Exception $e){
-            $log->write('This payment method is not available|error->' . $e->getMessage());
             die('This payment method is not available|error->' . $e->getMessage());
         }
 
@@ -195,11 +195,29 @@ class ControllerPaymentCompropago extends Controller
          *
          * [Envio de datos final para render de la vista de recibo]
          */
-        $log->write(print_r($response,true));
-        $json['success'] = htmlspecialchars_decode($this->url->link('payment/compropago/success', 'info_order='.base64_encode(json_encode($response)) , 'SSL'));
+        //$json['success'] = htmlspecialchars_decode($this->url->link('payment/compropago/success', 'info_order='.base64_encode(json_encode($response)) , 'SSL'));
+        
+        if (file_exists(DIR_TEMPLATE . $this->config->get('config_template') . '/template/payment/compropago_success.tpl')) { //if file exists in your current template folder
+            $log->write('Never give up!!!:::template exists');
 
-        $this->response->addHeader('Content-Type: application/json');
-        $this->response->setOutput(json_encode($json));
+            //$json['success'] = htmlspecialchars_decode($this->url->link('/template/payment/compropago_success.tpl', 'info_order='.base64_encode(json_encode($response)) , 'SSL'));
+            //$log->write(print_r($json['success'],true));
+            //$this->response->addHeader('Content-Type: application/json');
+            //$this->response->setOutput(json_encode($json));
+            $test_data['test'] = 'test';
+
+            $this->response->addHeader('Content-Type: application/json');
+            $this->response->setOutput(json_encode( $test_data ));
+
+            //$this->response->setOutput($this->load->view($this->config->get('config_template') . '/template/payment/compropago_success.tpl', $test_data )); //get it
+
+        } else {
+            $log->write('Never give up!!!:::2');
+            $this->response->setOutput($this->load->view('/template/payment/compropago_success.tpl', null)); //or get the file from the default folder
+        }
+
+
+        
     }
 
 
