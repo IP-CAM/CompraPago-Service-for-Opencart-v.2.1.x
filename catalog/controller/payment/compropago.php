@@ -1,4 +1,8 @@
 <?php
+
+error_reporting(E_ALL);
+ini_set("display_errors", 1);
+
 require_once dirname(dirname(dirname(dirname(__FILE__)))) . '/vendor/autoload.php';
 
  use CompropagoSdk\Factory\Factory;
@@ -196,28 +200,68 @@ class ControllerPaymentCompropago extends Controller
          * [Envio de datos final para render de la vista de recibo]
          */
         //$json['success'] = htmlspecialchars_decode($this->url->link('payment/compropago/success', 'info_order='.base64_encode(json_encode($response)) , 'SSL'));
-        
-        if (file_exists(DIR_TEMPLATE . $this->config->get('config_template') . '/template/payment/compropago_success.tpl')) { //if file exists in your current template folder
-            $log->write('Never give up!!!:::template exists');
+        // $this->response->setOutput($this->load->view('payment/test2', $test_data));
+        //$log->write( 'DIR_TEMPLATE->' . DIR_TEMPLATE . '|config_template_path->' . $this->config->get('config_template') . '|path->' . 'template/payment/test2.tpl');
+        //$test_data['test'] = 'test';
+        //if (file_exists(DIR_TEMPLATE . $this->config->get('config_template') . 'template/payment/test2.tpl')) { //if file exists in your current template folder
+            //$log->write('Never give up!!!:::template exists');
 
             //$json['success'] = htmlspecialchars_decode($this->url->link('/template/payment/compropago_success.tpl', 'info_order='.base64_encode(json_encode($response)) , 'SSL'));
             //$log->write(print_r($json['success'],true));
             //$this->response->addHeader('Content-Type: application/json');
             //$this->response->setOutput(json_encode($json));
-            $test_data['test'] = 'test';
+            
 
-            $this->response->addHeader('Content-Type: application/json');
-            $this->response->setOutput(json_encode( $test_data ));
+            //$this->response->addHeader('Content-Type: application/json');
+            //$this->response->setOutput(json_encode( $test_data ));
 
             //$this->response->setOutput($this->load->view($this->config->get('config_template') . '/template/payment/compropago_success.tpl', $test_data )); //get it
 
-        } else {
-            $log->write('Never give up!!!:::2');
-            $this->response->setOutput($this->load->view('/template/payment/compropago_success.tpl', null)); //or get the file from the default folder
-        }
+            /*
+            $this->template = 'payment/compropago_success.tpl';
+            $this->children = array(
+                'common/header',
+                'common/footer'
+            );
+            $this->response->setOutput($this->render(true), $this->config->get('config_compression'));*/
+            //$this->load->view($this->config->get('config_template') . '/template/payment/compropago.tpl', $test_data);
+            //return $this->load->view($this->config->get('config_template') . 'template/payment/test2.tpl', $test_data);
+            //return $this->load->view($this->config->get('config_template') . 'template/payment/test2.tpl', $test_data);
+            //$log->write('out!!!:::a|'. $this->config->get('config_template') . 'template/payment/test2.tpl');
+            //$log->write('out!!!:::path->'. $this->config->get('config_template') . 'template/payment/test2.tpl');
+            
+        //} else {
+            //$log->write('Never give up!!!:::2');
+            //$this->response->setOutput($this->load->view('default/template/payment/test2', $test_data)); //or get the file from the default folder
+            //return $this->load->view('default/template/payment/test2', $test_data);
+        //}
 
-
+        //$log->write('out!!!:::2');
         
+        $this->load->language('payment/compropago');
+
+        // get header and footer
+        $data['breadcrumbs']        = array();
+        $data['breadcrumbs'][]      = array(
+            'text' => $this->language->get('text_home'),
+            'href' => $this->url->link('common/dashboard', 'token=hshjshjshjsywhjhsas', 'SSL')
+        );
+        $data['breadcrumbs'][]      = array(
+            'text' => $this->language->get('heading_title'),
+            'href' => $this->url->link('extension/feed', 'token=hshjshjshjsywhjhsas', 'SSL')
+        );
+        $data['heading_title']      = $this->language->get('heading_title');
+        $data['header']             = $this->load->controller('common/header');
+        $data['column_left']        = $this->load->controller('common/column_left');
+        $data['footer']             = $this->load->controller('common/footer');
+
+        $data['record'] = 'test';
+
+        $this->response->setOutput($this->load->view("compropago/receipt.tpl", $data));
+        //return $this->load->view("compropago/receipt.tpl", $data);
+        $log->write('url->' . $this->url->link('compropago/receipt.tpl'));
+        //$this->response->redirect($this->url->link('compropago/receipt.tpl', 'token=hshjshjshjsywhjhsas', true));
+        $log->write('Never give up!!!:::3');
     }
 
 
