@@ -1,7 +1,7 @@
-Plugin para OpenCart 2.1.x
+Plugin for OpenCart 2.1.x
 ====================
 
-## Descripción
-Provee el servicio de ComproPago para poder generar intenciones de pago dentro de la plataforma Opencart. Con ComproPago recibirá pagos en OXXO, 7Eleven, Extra y muchas tiendas más en todo México.
+## Description
+It provides the CompraPago service to be able to generate payment intentions within the Opencart platform. With CompraPago you will receive payments in OXXO, 7Eleven, Extra and many more stores throughout Mexico.
 
-[Registrarse en ComproPago ](https://compropago.com)
+[Register in CompraPago] (https://compropago.com) 
